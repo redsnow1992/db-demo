@@ -30,4 +30,5 @@ jobs:
     - name: Run a multi-line script
       run: |
         sudo gem install bundler
+        bundle install
         bundle exec rspec
