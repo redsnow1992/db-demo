@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+file_dir=$(dirname "$0")
+cd $file_dir
+status=$(cd .. && mvn clean package)
+
+java -cp ../target/db-demo-1.0-SNAPSHOT.jar org.redsnow.db.Bootstrap
