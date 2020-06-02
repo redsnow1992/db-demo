@@ -29,7 +29,7 @@ public class Statement {
     }
 
     public ExecuteResult executeInsert(Table table) {
-        return table.insert(this.row);
+        return table.executeInsert(this);
     }
 
     public ExecuteResult executeSelect(Table table) {

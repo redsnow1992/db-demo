@@ -30,7 +30,7 @@ public class Table {
     }
 
     // rowNum从1开始
-    public Page allocatePage(int rowNum) {
+    private Page allocatePage(int rowNum) {
         int pageNum = rowNum / ROWS_PER_PAGE;
         if (null == this.pages[pageNum]) {
             this.pages[pageNum] = new Page();
@@ -39,7 +39,7 @@ public class Table {
         return this.pages[pageNum];
     }
 
-    public ExecuteResult insert(Row row) {
+    private ExecuteResult insert(Row row) {
         Page page = allocatePage(numOfRows);
         page.insert(row);
         numOfRows += 1;

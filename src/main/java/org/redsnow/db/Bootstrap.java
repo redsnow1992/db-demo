@@ -5,6 +5,9 @@ import org.redsnow.db.enums.*;
 import org.redsnow.db.storage.Row;
 import org.redsnow.db.storage.Table;
 
+import static org.redsnow.db.storage.Row.COLUMN_EMAIL_SIZE;
+import static org.redsnow.db.storage.Row.COLUMN_USERNAME_SIZE;
+
 public class Bootstrap {
     public static int EXIT_SUCCESS = 0;
 
@@ -30,6 +33,12 @@ public class Bootstrap {
             switch (prepareStatement(cmd, statement)) {
                 case PREPARE_SUCCESS:
                     break;
+                case PREPARE_NEGATIVE_ID:
+                    System.out.println("ID must be positive.");
+                    continue;
+                case PREPARE_STRING_TOO_LONG:
+                    System.out.println("String is too long.");
+                    continue;
                 case PREPARE_SYNTAX_ERROR:
                     System.out.println("Syntax error. Could not parse statement.");
                     continue;
@@ -38,8 +47,14 @@ public class Bootstrap {
                     continue;
             }
 
-            statement.execute(table);
-            System.out.println("Executed.");
+            switch (statement.execute(table)) {
+                case EXECUTE_SUCCESS:
+                    System.out.println("Executed.");
+                    break;
+                case EXECUTE_TABLE_FULL:
+                    System.out.println("Error: Table full.");
+                    break;
+            }
         }
     }
 
@@ -63,6 +78,10 @@ public class Bootstrap {
 
             if (tokens.length != 4) {
                 return PrepareResult.PREPARE_SYNTAX_ERROR;
+            } else if (Integer.parseInt(tokens[1]) < 0) {
+                return PrepareResult.PREPARE_NEGATIVE_ID;
+            } else if (tokens[2].length() > COLUMN_USERNAME_SIZE || tokens[3].length() > COLUMN_EMAIL_SIZE) {
+                return PrepareResult.PREPARE_STRING_TOO_LONG;
             } else {
                 try {
                     statement.setRow(new Row(Integer.parseInt(tokens[1]),
