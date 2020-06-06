@@ -2,3 +2,6 @@
 *.lock
 *.iml
 target
+*.db
+*.data
+*.swp

@@ -6,6 +6,9 @@ import java.nio.CharBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
+import static org.redsnow.db.storage.Constants.PAGE_SIZE;
+import static org.redsnow.db.storage.Constants.ROWS_PER_PAGE;
+
 public class Row implements Serializable {
     public static final int COLUMN_USERNAME_SIZE = 32;
     public static final int COLUMN_EMAIL_SIZE = 255;
@@ -59,22 +62,26 @@ public class Row implements Serializable {
         this.email = email;
     }
 
-
-    public void write2Buffer(byte[] dest, byte[] src, int offset) {
-        System.arraycopy(src, 0, dest, offset, src.length);
-    }
-
-
     // id, username.length, username, email.length, email
     public byte[] serialize() {
         byte[] buffer = new byte[ROW_SIZE];
-        write2Buffer(buffer, Converter.intToBytes(id), ID_OFFSETS);
-        write2Buffer(buffer, Converter.intToBytes(username.length), USERNAME_OFFSET);
-        write2Buffer(buffer, Converter.charsToBytes(username), USERNAME_OFFSET + INT_SIZE);
-        write2Buffer(buffer, Converter.intToBytes(email.length), EMAIL_OFFSET);
-        write2Buffer(buffer, Converter.charsToBytes(email), EMAIL_OFFSET + INT_SIZE);
+        BufferUtils.write2Buffer(Converter.intToBytes(id), buffer, ID_OFFSETS);
+        BufferUtils.write2Buffer(Converter.intToBytes(username.length), buffer, USERNAME_OFFSET);
+        BufferUtils.write2Buffer(Converter.charsToBytes(username), buffer, USERNAME_OFFSET + INT_SIZE);
+        BufferUtils.write2Buffer(Converter.intToBytes(email.length), buffer, EMAIL_OFFSET);
+        BufferUtils.write2Buffer(Converter.charsToBytes(email), buffer, EMAIL_OFFSET + INT_SIZE);
 
         return buffer;
+    }
+
+    // id, username.length, username, email.length, email
+    public void serialize(byte[] pageBuffer, int rowNum) {
+        int rowOffset = getRowOffset(rowNum);
+        BufferUtils.write2Buffer(Converter.intToBytes(id), pageBuffer, rowOffset + ID_OFFSETS);
+        BufferUtils.write2Buffer(Converter.intToBytes(username.length), pageBuffer, rowOffset + USERNAME_OFFSET);
+        BufferUtils.write2Buffer(Converter.charsToBytes(username), pageBuffer, rowOffset + USERNAME_OFFSET + INT_SIZE);
+        BufferUtils.write2Buffer(Converter.intToBytes(email.length), pageBuffer, rowOffset+ EMAIL_OFFSET);
+        BufferUtils.write2Buffer(Converter.charsToBytes(email), pageBuffer, rowOffset + EMAIL_OFFSET + INT_SIZE);
     }
 
     public static byte[] getBytes(byte[] buffer, int offset, int length) {
@@ -84,14 +91,21 @@ public class Row implements Serializable {
     }
 
 
-    public static Row deserialize(byte[] buffer) {
-        int id = Converter.bytesToInt(getBytes(buffer, ID_OFFSETS, ID_SIZE));
-        int uL = Converter.bytesToInt(getBytes(buffer, ID_SIZE, INT_SIZE));
-        char[] username = Converter.bytesToChars(buffer, USERNAME_OFFSET + INT_SIZE, uL);
-        int eL = Converter.bytesToInt(getBytes(buffer, EMAIL_OFFSET, INT_SIZE));
-        char[] email = Converter.bytesToChars(buffer, EMAIL_OFFSET + INT_SIZE, eL);
+    public static Row deserialize(byte[] pageBuffer, int rowNum) {
+        int rowOffset = getRowOffset(rowNum);
+        int id = Converter.bytesToInt(pageBuffer, rowOffset + ID_OFFSETS);
+        int uL = Converter.bytesToInt(pageBuffer, rowOffset + USERNAME_OFFSET);
+        char[] username = Converter.bytesToChars(pageBuffer, rowOffset + USERNAME_OFFSET + INT_SIZE, uL);
+        int eL = Converter.bytesToInt(pageBuffer, rowOffset + EMAIL_OFFSET);
+        char[] email = Converter.bytesToChars(pageBuffer, rowOffset + EMAIL_OFFSET + INT_SIZE, eL);
 
         return new Row(id, username, email);
+    }
+
+    // in the context of page content
+    public static int getRowOffset(int rowNum) {
+        int pageNum = rowNum / ROWS_PER_PAGE;
+        return pageNum * PAGE_SIZE + (rowNum - pageNum * ROWS_PER_PAGE) * ROW_SIZE;
     }
 
     @Override

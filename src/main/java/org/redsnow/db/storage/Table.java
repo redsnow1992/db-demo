@@ -3,40 +3,45 @@ package org.redsnow.db.storage;
 import org.redsnow.db.Statement;
 import org.redsnow.db.enums.ExecuteResult;
 
+import java.io.IOException;
+
 import static org.redsnow.db.storage.Constants.*;
 
 public class Table {
     private int numOfRows;
-    private Page[] pages;
+    private Pager pager;
 
-    public Table() {
-        this.pages = new Page[TABLE_MAX_PAGES];
+    public Table(Pager pager) {
+        this.pager = pager;
+        this.numOfRows = this.pager.getNumOfRows();
     }
 
     public int getNumOfRows() {
-        return numOfRows;
+        return this.numOfRows;
     }
 
     public void setNumOfRows(int numOfRows) {
         this.numOfRows = numOfRows;
     }
 
-    public Page[] getPages() {
-        return pages;
+    public Pager getPager() {
+        return this.pager;
     }
 
-    public void setPages(Page[] pages) {
-        this.pages = pages;
+    public void setPager(Pager pager) {
+        this.pager = pager;
     }
 
-    // rowNum从1开始
+    // rowNum从0开始
     private Page allocatePage(int rowNum) {
         int pageNum = rowNum / ROWS_PER_PAGE;
-        if (null == this.pages[pageNum]) {
-            this.pages[pageNum] = new Page();
-        }
 
-        return this.pages[pageNum];
+        try {
+            return this.pager.getPage(pageNum);
+        } catch (IOException ex) {
+            System.exit(EXIT_FAILURE);
+        }
+        return null;
     }
 
     private ExecuteResult insert(Row row) {
@@ -55,10 +60,15 @@ public class Table {
     }
 
     public ExecuteResult executeSelect() {
-        for (int i = 1; i <= numOfRows; i++) {
+        for (int i = 0; i < numOfRows; i++) {
             Page page = allocatePage(i);
             System.out.println(page.getRow(i));
         }
         return ExecuteResult.EXECUTE_SUCCESS;
+    }
+
+    public void close() {
+        this.pager.flushNumOfRow(this.numOfRows);
+        this.pager.close();
     }
 }

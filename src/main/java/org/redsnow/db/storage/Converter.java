@@ -20,8 +20,11 @@ public class Converter {
     }
 
     public static char[] bytesToChars(byte[] bytes, int offset, int length) {
-        final CharBuffer charBuffer = StandardCharsets.UTF_8.decode(ByteBuffer.wrap(bytes, offset, length));
-        return Arrays.copyOf(charBuffer.array(), charBuffer.limit());
+        char[] data = new char[length];
+        for (int i = 0; i < length; i++) {
+            data[i] = (char) bytes[offset + i];
+        }
+        return data;
     }
 
     public static int bytesToInt(byte[] b) {
@@ -29,6 +32,13 @@ public class Converter {
                 (b[2] & 0xFF) << 8 |
                 (b[1] & 0xFF) << 16 |
                 (b[0] & 0xFF) << 24;
+    }
+
+    public static int bytesToInt(byte[] b, int offset) {
+        return   b[offset + 3] & 0xFF |
+                (b[offset + 2] & 0xFF) << 8 |
+                (b[offset + 1] & 0xFF) << 16 |
+                (b[offset] & 0xFF) << 24;
     }
 
     public static byte[] intToBytes(int a) {

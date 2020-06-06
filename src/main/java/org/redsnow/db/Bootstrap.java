@@ -2,6 +2,7 @@ package org.redsnow.db;
 
 import java.util.Scanner;
 import org.redsnow.db.enums.*;
+import org.redsnow.db.storage.Pager;
 import org.redsnow.db.storage.Row;
 import org.redsnow.db.storage.Table;
 
@@ -13,14 +14,15 @@ public class Bootstrap {
 
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
-        Table table = new Table();
+        String filename = args[0];
+        Table table = dbOpen(filename);
 
         while (true) {
             printPrompt();
             String cmd = scanner.nextLine().trim();
 
             if (cmd.charAt(0) == '.') {
-                switch (doMetaCommand(cmd)) {
+                switch (doMetaCommand(cmd, table)) {
                     case META_COMMAND_SUCCESS:
                         continue;
                     case META_COMMAND_UNRECOGNIZED_COMMAND:
@@ -62,8 +64,9 @@ public class Bootstrap {
         System.out.print("db > ");
     }
 
-    public static MetaCommandResult doMetaCommand(String cmd) {
+    public static MetaCommandResult doMetaCommand(String cmd, Table table) {
         if (cmd.equals(".exit")) {
+            dbClose(table);
             System.exit(EXIT_SUCCESS);
             return MetaCommandResult.META_COMMAND_SUCCESS;
         } else {
@@ -97,5 +100,14 @@ public class Bootstrap {
         } else {
             return PrepareResult.PREPARE_UNRECOGNIZED_STATEMENT;
         }
+    }
+
+    public static Table dbOpen(String filename) {
+        Pager pager = new Pager(filename);
+        return new Table(pager);
+    }
+
+    public static void dbClose(Table table) {
+        table.close();
     }
 }
