@@ -1,5 +1,6 @@
 package org.redsnow.db.storage;
 
+import org.redsnow.db.Cursor;
 import org.redsnow.db.Statement;
 import org.redsnow.db.enums.ExecuteResult;
 
@@ -33,8 +34,8 @@ public class Table {
     }
 
     // rowNum从0开始
-    private Page allocatePage(int rowNum) {
-        int pageNum = rowNum / ROWS_PER_PAGE;
+    private Page allocatePage(Cursor cursor) {
+        int pageNum = cursor.getRowNum() / ROWS_PER_PAGE;
 
         try {
             return this.pager.getPage(pageNum);
@@ -45,7 +46,7 @@ public class Table {
     }
 
     private ExecuteResult insert(Row row) {
-        Page page = allocatePage(numOfRows);
+        Page page = allocatePage(Cursor.tableEnd(this));
         page.insert(row);
         numOfRows += 1;
         return ExecuteResult.EXECUTE_SUCCESS;
@@ -60,10 +61,13 @@ public class Table {
     }
 
     public ExecuteResult executeSelect() {
-        for (int i = 0; i < numOfRows; i++) {
-            Page page = allocatePage(i);
-            System.out.println(page.getRow(i));
+        Cursor cursor = Cursor.tableStart(this);
+        while (!cursor.isEndOfTable()) {
+            Page page = allocatePage(cursor);
+            System.out.println(page.getRow(cursor.getRowNum()));
+            cursor.advance();
         }
+
         return ExecuteResult.EXECUTE_SUCCESS;
     }
 

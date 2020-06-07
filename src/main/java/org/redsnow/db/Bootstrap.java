@@ -16,6 +16,7 @@ public class Bootstrap {
         Scanner scanner = new Scanner(System.in);
         String filename = args[0];
         Table table = dbOpen(filename);
+        Cursor cursor = Cursor.tableEnd(table);
 
         while (true) {
             printPrompt();
